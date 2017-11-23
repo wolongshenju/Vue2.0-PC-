@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0">
+        <meta name="viewport" content="width=375,maximum-scale=4,user-scalable=no">
+		<meta name="format-detection" content="telephone=no">
+        <meta name="full-screen" content="yes">
+        <link rel="stylesheet" href="css/main.css">
+		<script src="js/vue.js"></script>
+		<style>
+       
+        </style>
+        
+	</head>
+	<body>
+		<div id="app">
+                <div class="progress-box">
+                        <div class="progress-wrapper">
+                            <div v-for="(categoryName,index) in categoryNames" class="progress-content">
+                                <span class="title fc1">{{ categoryName.name }}</span>
+                                <span id="grade" class="fc1" :ref="'grade'+index">{{ categoryName.num }}</span>
+                                <div id="barbox">
+                                    <div class="scale" id="bar" :ref="'bar'+index" @touchstart="move(index)">
+                                        <div id="bg" :ref="'bg'+index"></div>
+                                        <span id="btn" class="circle_move" :ref="'btn'+index"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                </div>
+		</div>	
+	</body>
+		
+	<script>
+         
+    
+           
+	   var vm =new Vue({
+			el:"#app",
+			data:{
+				categoryNames: [
+                {
+                    name: "吸烟",
+                    num: 2
+
+                }, {
+                    name: "BMI",
+                    num: 2
+                },
+                {
+                    name: "职业",
+                    num: 3
+                },
+                {
+                    name: "运动",
+                    num: 1
+                },
+                {
+                    name: "PM2.5",
+                    num: 2
+                },
+                {
+                    name: "非健康饮食",
+                    num: 0
+                },
+                {
+                    name: "健康饮食",
+                    num: 1
+                }],
+                showNum: [],//存储每个项目的级别
+                barX: "",//包裹滑块的父盒子距离视窗的距离
+				step: [{value: 0, afterMove: 0, symbol: 0},
+                {value: 0, afterMove: 0, symbol: 0},
+                {value: 0, afterMove: 0, symbol: 0},
+                {value: 0, afterMove: 0, symbol: 0},
+                {value: 0, afterMove: 0, symbol: 0},
+                {value: 0, afterMove: 0, symbol: 0},
+                {value: 0, afterMove: 0, symbol: 0}
+            		],        //初始化每个滚轮步长值
+			},
+            mounted:function(){
+                this.preview();
+            },
+			methods:{
+                preview:function(){
+                    for (var i = 0; i < this.categoryNames.length; i++) {
+                        var btn = this.$refs['btn' + i][0];//获取滑块;
+                        var bg = this.$refs['bg' + i][0];//获取进度条dom;
+                        var bar = this.$refs['bar' + i][0];//获取进度条容器dom;
+                        var barWidth = bar.offsetWidth;//包裹进度条的盒子的宽度
+                        var btnWidth = btn.offsetWidth;//滚轮的宽度
+                        this.barX = document.getElementById("barbox").offsetLeft;//计算包裹滑块的父盒子距离视窗的距离
+                    //计算滚轮和精度条初始位置
+                    //用户风险等级若为0，则不减去滑块的宽度
+                    if (this.categoryNames[i].num == 0) {
+                        console.log("用户等级为0");
+                        bg.style.width = ((this.categoryNames[i].num / 5) * barWidth + btnWidth) + 'px';
+                        btn.style.left = (this.categoryNames[i].num / 5) * barWidth + 'px';
+                    }
+                    //不是所有项目等级最大值都是5
+                    else {
+                        if (i == 3) {
+                            bg.style.width = ((this.categoryNames[i].num / 3) * barWidth - btnWidth ) + 'px';
+                            btn.style.left = ((this.categoryNames[i].num / 3) * barWidth - btnWidth ) + 'px';
+                            
+                        }
+                        else if (i == 5 || i == 6) {
+                            bg.style.width = ((this.categoryNames[i].num / 4) * barWidth - btnWidth ) + 'px';
+                            btn.style.left = ((this.categoryNames[i].num / 4) * barWidth - btnWidth ) + 'px';
+                          
+                        }
+                        else {
+                            bg.style.width = ((this.categoryNames[i].num / 5) * barWidth - btnWidth ) + 'px';
+                            btn.style.left = ((this.categoryNames[i].num / 5) * barWidth - btnWidth ) + 'px';
+                           
+                        }
+                    }
+                  
+                    }
+                },
+                move: function (index) {
+                var that = this;//变量替换
+                var btn = that.$refs['btn' + index][0];//获取滑块;
+                var grade = that.$refs['grade' + index][0];//获取项目等级dom;
+                var bg = that.$refs['bg' + index][0];//获取进度条dom;
+                var bar = that.$refs['bar' + index][0];//获取进度条容器dom;
+                var btnWidth = btn.offsetWidth;//滚轮的宽度
+                var barWidth = bar.offsetWidth;//包裹进度条的盒子的宽度
+                var max = barWidth - btnWidth;//滑块滑动的最大距离
+                this.barX = document.getElementById("barbox").offsetLeft;//计算包裹滑块的父盒子距离视窗的距离
+                btn.ontouchmove = function (event) {
+                    that.step[index].afterMove = event.changedTouches[0].pageX;//获取滑动时的坐标;
+                    that.step[index].value = that.step[index].afterMove - that.barX;//
+                    if (that.step[index].value <= btnWidth) {
+                        that.step[index].value = 0;//坐标差小于滑块的宽度，不移动
+                    }
+                    else if (that.step[index].value >= max) {
+                        that.step[index].value = max;
+                    }
+                    else {
+                        //不做任何处理
+                    }
+                    btn.style.left = that.step[index].value + 'px';
+                    bg.style.width = that.step[index].value + 'px';
+                    if (index == 3) {
+                        that.showNum[index] = Math.round(((that.step[index].value) / barWidth) * 3);
+                    }
+                    else if (index == 5 || index == 6) {
+                        that.showNum[index] = Math.round(((that.step[index].value) / barWidth) * 4);
+                    }
+                    else {
+                        that.showNum[index] = Math.round(((that.step[index].value) / barWidth) * 5);
+                    }
+                    that.categoryNames[index].num = that.showNum[index];
+                }
+                //手指移开,停止移动
+                btn.ontouchend = function (event) {
+                    btn.ontouchmove = null;
+                }
+            }           
+			}
+	   });
+	</script>
+</html>
